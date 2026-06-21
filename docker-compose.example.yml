@@ -1,0 +1,23 @@
+services:
+
+  macs-test-suite:
+    image: ghcr.io/macleod92/macs-test-suite:latest
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  # Example: a service that waits for macs-test-suite to be healthy before starting
+  my-app:
+    image: some-other-image:latest
+    depends_on:
+      macs-test-suite:
+        condition: service_healthy
+
+  # To make macs-test-suite itself wait on another service, add to it:
+  # depends_on:
+  #   db:
+  #     condition: service_healthy

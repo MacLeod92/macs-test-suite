@@ -1,0 +1,33 @@
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version
+        id: version
+        run: echo "VERSION=$(cat VERSION | tr -d '[:space:]')" >> $GITHUB_OUTPUT
+
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Build and push
+        run: |
+          docker build \
+            --label "org.opencontainers.image.revision=${{ github.sha }}" \
+            --label "org.opencontainers.image.version=${{ steps.version.outputs.VERSION }}" \
+            --build-arg VERSION=${{ steps.version.outputs.VERSION }} \
+            -t ghcr.io/macleod92/macs-test-suite:${{ steps.version.outputs.VERSION }} \
+            -t ghcr.io/macleod92/macs-test-suite:latest \
+            .
+          docker push ghcr.io/macleod92/macs-test-suite:${{ steps.version.outputs.VERSION }}
+          docker push ghcr.io/macleod92/macs-test-suite:latest
